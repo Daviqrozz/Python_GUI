@@ -7,8 +7,9 @@ from os import path, getcwd
 dbpath = path.join(getcwd(), "telefones.sqlite")
 
 janela = tk.Tk()
+janela.eval('tk::PlaceWindow %s center' % janela.winfo_pathname(janela.winfo_id()))
 janela.title("Exportador CSV")
-janela.geometry("800x600")
+janela.geometry("500x500")
 janela.resizable(True, False)
 
 nome, telefone, itens = tk.StringVar(), tk.StringVar(), tk.StringVar()
@@ -18,7 +19,14 @@ def inserir():
         query = "insert into contatos (nome, telefone) values (?,?);"
         cursor = cx.cursor()
         cursor.execute(query, (nome.get(), telefone.get()))
-        print("Dados inseridos com sucesso")
+        #Condiçao de se dados nao forem inseridos, retornar erro na interface.
+        if conn.Error == True:
+            print('Dados nao foram inseridos')
+        else:
+            print("Dados inserido com sucesso")
+            print(f'Nome:{nome.get()} - Telefone:{telefone.get()}')
+            
+
     ler()
 
 def limpar_tabela():
@@ -28,7 +36,9 @@ def limpar_tabela():
             cursor = cx.cursor()
             cursor.execute(query)
             messagebox.showinfo("Sucesso", "Tabela limpa com sucesso.")
+            print("Dados limpos com sucesso")
     except conn.Error as e:
+        print("Dados limpados com sucesso")
         messagebox.showerror("Erro", f"Erro ao limpar tabela: {e}")
     ler()
 
@@ -39,8 +49,8 @@ def exportar_csv():
             cursor = cx.cursor()
             cursor.execute(query)
             writer = csv.writer(csv_file)
-            writer.writerow([i[0] for i in cursor.description])  # Escrever cabeçalho
-            writer.writerows(cursor.fetchall())  # Escrever os dados
+            writer.writerow([i[0] for i in cursor.description])
+            writer.writerows(cursor.fetchall())
         messagebox.showinfo("Sucesso", "Dados exportados para contatos.csv.")
     except conn.Error as e:
         messagebox.showerror("Erro", f"Erro ao exportar dados: {e}")
@@ -57,14 +67,16 @@ def ler():
         
         itens.set(s)
 
-# inicializacao do componente label
-ttk.Label(janela, text="Nome").grid(column=10, row=20)
-ttk.Entry(janela, textvariable=nome).grid(column=20, row=20)
-ttk.Label(janela, text="Telefone").grid(column=10, row=40)
-ttk.Entry(janela, textvariable=telefone).grid(column=20, row=40)
-ttk.Button(janela, text="Salvar", command=inserir).grid(column=20, row=60)
-ttk.Button(janela, text="Limpar", command=limpar_tabela).grid(column=20, row=80)
-tk.Listbox(janela, listvariable=itens).grid(column=20, row=100)
-ttk.Button(janela, text="Exportar CSV", command=exportar_csv).grid(column=20, row=120)
+
+        
+ttk.Label(janela, text="Nome").place(x=200,y=40)
+ttk.Entry(janela, textvariable=nome).place(x=200,y=60)
+ttk.Label(janela, text="Telefone").place(x=200,y=85)
+ttk.Entry(janela, textvariable=telefone).place(x=200,y=105)
+ttk.Button(janela, text="Salvar", command=inserir).place(x=200,y=135)
+ttk.Button(janela, text="Limpar", command=limpar_tabela).place(x=200,y=350)
+tk.Listbox(janela, listvariable=itens).place(x=200,y=170)
+ttk.Button(janela, text="Exportar CSV", command=exportar_csv).place(x=200,y=375)
+
 
 janela.mainloop()
