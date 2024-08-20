@@ -5,13 +5,17 @@ import csv
 import re
 from os import path, getcwd
 
+#Estilizar
+#Alterar formato da tabela(Adicionar colunas)
+
+
 dbpath = path.join(getcwd(), "telefones.sqlite")
 
 janela = tk.Tk()
 janela.eval("tk::PlaceWindow %s center" % janela.winfo_pathname(janela.winfo_id()))
 janela.title("Exportador CSV")
 janela.geometry("500x500")
-janela.resizable(True, False)
+janela.resizable(False, False)
 
 nome, telefone, itens = tk.StringVar(), tk.StringVar(), tk.StringVar()
 
@@ -29,7 +33,27 @@ def inserir():
             return True
         else:
             return False
-
+        
+    def validar_duplicidade(nome_val,telefone_val):
+        try:
+            with conn.connect(dbpath) as cx:
+                cursor = cx.cursor()
+                query = """
+                SELECT COUNT(*) FROM CONTATOS
+                WHERE NOME = ? AND TELEFONE = ?
+                """
+                cursor.execute(query,(nome_val,telefone_val))
+                resultado = cursor.fetchone()
+                print(resultado)
+                
+                if resultado [0] > 0:
+                    return True
+                else:
+                    return False     
+        except Exception as e:
+             print("Ja existe esse contato salvo")
+                
+                
     if not nome_val and not telefone_val:
         print("Por favor, preencha todos os campos.")
         messagebox.showinfo("Por favor", "Preencha todos os campos corretamente")
@@ -50,6 +74,11 @@ def inserir():
     elif not nome_val.isalpha():
         print("O Nome do contato nao pode conter numeros")
         messagebox.showinfo("Atenção","O Nome do contato nao pode conter numeros")
+        
+    elif validar_duplicidade(nome_val,telefone_val):
+        print("Ja existe este contato salvo!")
+        messagebox.showinfo("Atenção","Ja existe este contato salvo!")
+        return
     try:
         with conn.connect(dbpath) as cx:
             query = "insert into contatos (nome, telefone) values (?,?);"
@@ -78,7 +107,6 @@ def limpar_tabela():
         print(f"Erro ao limpar tabela: {e}")
         messagebox.showerror("Erro", f"Erro ao limpar tabela: {e}")
 
-
     ler()
 
 # Funçao de exportar dados para arquivo csv
@@ -104,9 +132,7 @@ def ler():
         cursor = cx.cursor()
         cursor.execute(query)
         dados = cursor.fetchall()
-
         lista_itens = [f"{nome} - Telefone:{telefone}" for nome, telefone in dados]
-
         itens.set(lista_itens)
 
 ler()
@@ -119,6 +145,6 @@ ttk.Button(janela, text="Salvar", command=inserir).place(x=200, y=135)
 ttk.Button(janela, text="Limpar", command=limpar_tabela).place(x=200, y=370)
 ttk.Label(janela, text="Lista de contatos").place(x=200, y=180)
 tk.Listbox(janela, width=50, listvariable=itens).place(x=100, y=200)
-ttk.Button(janela, text="Exportar CSV", command=exportar_csv).place(x=200, y=395)
+ttk.Button(janela, text="Exportar CSV", command=exportar_csv).place(x=200, y=400)
 
 janela.mainloop()
