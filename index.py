@@ -15,22 +15,41 @@ janela.resizable(True, False)
 
 nome, telefone, itens = tk.StringVar(), tk.StringVar(), tk.StringVar()
 
-
 # Funçao de inserir dados no banco
 def inserir():
     nome_val = nome.get()
+    nome_val = nome_val.capitalize()
     telefone_val = telefone.get()
-    telefone_padrao = '0'
+    telefone_padrao = r"\d{11}"
 
     #CONDIÇOES DE VALIDAÇAO
-    if not nome_val or not telefone_val:
+
+    def validar_numero(telefone_val):
+        if re.fullmatch(telefone_padrao,telefone_val):
+            return True
+        else:
+            return False
+
+    if not nome_val and not telefone_val:
         print("Por favor, preencha todos os campos.")
         messagebox.showinfo("Por favor", "Preencha todos os campos corretamente")
         return
-    elif telefone_val != telefone_padrao:
-        print("O numero de telefone esta incorreto")
-        messagebox.showinfo("Por favor", "Verifique se o numero de telefone esta incorreto")
+    elif not telefone_val:
+        print("Numero de telefone precisa ser preenchido")
+        messagebox.showinfo("Por favor","Numero de telefone precisa ser preenchido")
         return
+    elif not validar_numero(telefone_val):
+        print("Por favor, preencha o telefone corretamente.")
+        messagebox.showinfo("Por favor", "Preencha todos o telefone corretamente")
+        return
+    elif not nome_val:
+        print("O Nome do contato precisa ser preenchido")
+        messagebox.showinfo("Por favor","O Nome do contato precisa ser preenchido")
+        return
+    #Valida se contem numeros no campo do nome com a função isaplha()
+    elif not nome_val.isalpha():
+        print("O Nome do contato nao pode conter numeros")
+        messagebox.showinfo("Atenção","O Nome do contato nao pode conter numeros")
     try:
         with conn.connect(dbpath) as cx:
             query = "insert into contatos (nome, telefone) values (?,?);"
@@ -45,21 +64,22 @@ def inserir():
 
     ler()
 
-
 # Funçao de limpar tabela
 def limpar_tabela():
     try:
         with conn.connect(dbpath) as cx:
-            query = "DELETE FROM contatos;"
             cursor = cx.cursor()
-            cursor.execute(query)
-            messagebox.showinfo("Sucesso", "Tabela limpa com sucesso.")
-            print("Dados limpos com sucesso")
+            cursor.execute("DELETE FROM contatos;")
+            cursor.execute("DELETE FROM sqlite_sequence WHERE name='contatos';")
+            cx.commit()
+            messagebox.showinfo("Sucesso", "Contatos excluidos com sucesso.")
+            print("Dados limpos e IDs resetados com sucesso")
     except conn.Error as e:
-        print("Dados limpados com sucesso")
+        print(f"Erro ao limpar tabela: {e}")
         messagebox.showerror("Erro", f"Erro ao limpar tabela: {e}")
-    ler()
 
+
+    ler()
 
 # Funçao de exportar dados para arquivo csv
 def exportar_csv():
@@ -77,7 +97,6 @@ def exportar_csv():
     except conn.Error as e:
         messagebox.showerror("Erro", f"Erro ao exportar dados: {e}")
 
-
 # Funçao de retornar os dados tragos da consulta para uma lista formatada
 def ler():
     with conn.connect(dbpath) as cx:
@@ -89,7 +108,6 @@ def ler():
         lista_itens = [f"{nome} - Telefone:{telefone}" for nome, telefone in dados]
 
         itens.set(lista_itens)
-
 
 ler()
 
